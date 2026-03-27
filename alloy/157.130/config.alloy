@@ -61,9 +61,6 @@ loki.source.file "app_logs" {
 
 // ─────────────────────────────────────────────
 // SIP Server log (container)
-// discovery.docker 已經收所有 container，
-// sip_logs process 靠 selector container="sip_server" 過濾
-// 確認你的 container 名稱，改掉下面所有 sip_server
 // ─────────────────────────────────────────────
 
 loki.process "sip_logs" {
@@ -416,10 +413,32 @@ loki.process "router" {
 }
 
 // ─────────────────────────────────────────────
+// container recourse
+// ─────────────────────────────────────────────
+
+prometheus.exporter.cadvisor "local" {
+  docker_host = "unix:///var/run/docker.sock"
+  docker_only = true
+  disable_root_cgroup_stats = true
+  storage_duration = "5m"
+}
+
+prometheus.scrape "scraper" {
+  targets    = prometheus.exporter.cadvisor.local.targets
+  forward_to = [prometheus.remote_write.monitoring.receiver]
+}
+
+prometheus.remote_write "monitoring" {
+  endpoint {
+    url = "http://192.168.157.169:9090/api/v1/write"
+  }
+}
+
+// ─────────────────────────────────────────────
 // 輸出到 Loki
 // ─────────────────────────────────────────────
 loki.write "default" {
   endpoint {
-    url = "http://1.169.157.169:3100/loki/api/v1/push"
+    url = "http://192.169.157.169:3100/loki/api/v1/push"
   }
 }
