@@ -60,6 +60,196 @@ loki.source.file "app_logs" {
 }
 
 // ─────────────────────────────────────────────
+// SIP Server log (host 上直接跑，不是 container)
+// 改成你的實際 log 路徑
+// ─────────────────────────────────────────────
+local.file_match "sip_logs" {
+  path_targets = [{
+    __path__ = "/opt/home/matthew/SIP_server/logs/*.log",
+    job      = "sip_server",
+    service  = "sip",
+  }]
+}
+
+loki.source.file "sip_logs" {
+  targets    = local.file_match.sip_logs.targets
+  forward_to = [loki.process.sip_logs.receiver]
+}
+
+loki.process "sip_logs" {
+
+  // ── SIP 事件: > INVITE/ACK/BYE from (IP) (call_id=xxx) ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^> (?P<sip_method>INVITE|ACK|BYE|CANCEL|OPTIONS|REGISTER) from \\('(?P<remote_ip>[\\d\\.]+)', (?P<remote_port>\\d+)\\)(?: \\(call_id=(?P<call_id>\\S+)\\))?$"
+    }
+    stage.labels {
+      values = {
+        sip_method = "",
+        remote_ip  = "",
+        call_id    = "",
+      }
+    }
+    stage.static_labels {
+      values = { level = "info", event_type = "sip" }
+    }
+  }
+
+  // ── Transcription 完成: language, probability, duration ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^Transcription complete in (?P<transcription_duration>[\\d\\.]+)s \\(language: (?P<lang>\\w+), probability: (?P<lang_prob>[\\d\\.]+)\\)$"
+    }
+    stage.labels {
+      values = {
+        lang                  = "",
+        lang_prob             = "",
+        transcription_duration = "",
+      }
+    }
+    stage.static_labels {
+      values = { level = "info", event_type = "stt" }
+    }
+  }
+
+  // ── LLM HTTP 請求成功 ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^HTTP Request: (?P<http_method>\\w+) (?P<llm_url>\\S+) \"HTTP/[\\d\\.]+ (?P<status_code>\\d+) [^\"]+\"$"
+    }
+    stage.labels {
+      values = {
+        http_method = "",
+        status_code = "",
+      }
+    }
+    stage.static_labels {
+      values = { level = "info", event_type = "llm_request" }
+    }
+  }
+
+  // ── LLM 回應內容 ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^LLM Response: (?P<llm_response>.+)$"
+    }
+    stage.labels {
+      values = { llm_response = "" }
+    }
+    stage.static_labels {
+      values = { level = "info", event_type = "llm_response" }
+    }
+  }
+
+  // ── LLM 錯誤: 500 / 429 ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^Chat failed: (?:Server|Client) error '(?P<status_code>\\d+) [^']+' for url '(?P<llm_url>[^']+)'$"
+    }
+    stage.labels {
+      values = {
+        status_code = "",
+        llm_url     = "",
+      }
+    }
+    stage.static_labels {
+      values = { level = "error", event_type = "llm_error" }
+    }
+  }
+
+  // ── Python Traceback ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "(?P<traceback>Traceback \\(most recent call last\\))"
+    }
+    stage.static_labels {
+      values = { level = "error", event_type = "exception" }
+    }
+  }
+
+  // ── RTP 封包 (noise，drop 掉，不需要進 Loki) ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.drop {
+      expression = "^\\[SEND ACTIVE\\]|^\\[RTP-RECV\\]|^\\[WS\\] Incoming RTP|^Handling RTP for|^base64_string"
+    }
+  }
+
+  // ── Call 生命週期事件 ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^(?P<call_event>Call started|Call ended|Call .* terminated|> Session ended|> Saving received audio|> RTP session ready|> Sent 200 OK|RING_ANS|> Calling): ?(?P<call_id>\\S+)?"
+    }
+    stage.labels {
+      values = {
+        call_event = "",
+        call_id    = "",
+      }
+    }
+    stage.static_labels {
+      values = { level = "info", event_type = "call_lifecycle" }
+    }
+  }
+
+  // ── STT 語言偵測 ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^Detected language '(?P<detected_lang>\\w+)' with probability (?P<detect_prob>[\\d\\.]+)$"
+    }
+    stage.labels {
+      values = {
+        detected_lang = "",
+        detect_prob   = "",
+      }
+    }
+    stage.static_labels {
+      values = { level = "info", event_type = "lang_detect" }
+    }
+  }
+
+  // ── Unsupported language fallback ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^Unsupported language got: (?P<unsupported_lang>\\w+)"
+    }
+    stage.labels {
+      values = { unsupported_lang = "" }
+    }
+    stage.static_labels {
+      values = { level = "warn", event_type = "lang_fallback" }
+    }
+  }
+
+  // ── TTS 合成 ──
+  stage.match {
+    selector = "{job=\"sip_server\"}"
+    stage.regex {
+      expression = "^(?:Synthesizing in (?P<tts_lang>\\w+)|TTS audio saved to: (?P<tts_file>\\S+))"
+    }
+    stage.labels {
+      values = {
+        tts_lang = "",
+        tts_file = "",
+      }
+    }
+    stage.static_labels {
+      values = { level = "info", event_type = "tts" }
+    }
+  }
+
+  forward_to = [loki.write.default.receiver]
+}
+
+// ─────────────────────────────────────────────
 // 解析路由 — 依 container label 分流
 // ─────────────────────────────────────────────
 loki.process "router" {
