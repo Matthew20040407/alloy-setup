@@ -7,7 +7,7 @@
       "pluginId": "loki"
     }
   ],
-  "title": "RAG Stack — Detailed Log Monitor",
+  "title": "RAG Stack Log Monitor",
   "uid": "rag-stack-logs",
   "schemaVersion": 38,
   "version": 1,
@@ -32,8 +32,276 @@
     {
       "id": 100,
       "type": "row",
-      "title": "📊 Overview",
+      "title": "Service Status",
       "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 71,
+      "title": "rag_app",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 3, "h": 3 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "expr": "count_over_time({container=\"rag_app\"}[5m])",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": { "0": { "text": "DOWN", "color": "red" } }
+            }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "noValue": "DOWN"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "name",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 72,
+      "title": "rag-cache-server",
+      "type": "stat",
+      "gridPos": { "x": 3, "y": 1, "w": 3, "h": 3 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "expr": "count_over_time({container=\"rag-cache-server\"}[5m])",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": { "0": { "text": "DOWN", "color": "red" } }
+            }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "noValue": "DOWN"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "name",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 73,
+      "title": "qdrant_db",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 1, "w": 3, "h": 3 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "expr": "count_over_time({container=\"qdrant_db\"}[5m])",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": { "0": { "text": "DOWN", "color": "red" } }
+            }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "noValue": "DOWN"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "name",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 74,
+      "title": "redis_cache",
+      "type": "stat",
+      "gridPos": { "x": 9, "y": 1, "w": 3, "h": 3 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "expr": "count_over_time({container=\"redis_cache\"}[5m])",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": { "0": { "text": "DOWN", "color": "red" } }
+            }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "noValue": "DOWN"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "name",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 75,
+      "title": "sip-server",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 1, "w": 3, "h": 3 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "expr": "count_over_time({container=\"sip-server\"}[5m])",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": { "0": { "text": "DOWN", "color": "red" } }
+            }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "noValue": "DOWN"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "name",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 76,
+      "title": "dhtaics-telegram-bot",
+      "type": "stat",
+      "gridPos": { "x": 15, "y": 1, "w": 3, "h": 3 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "expr": "count_over_time({container=\"dhtaics-telegram-bot\"}[5m])",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": { "0": { "text": "DOWN", "color": "red" } }
+            }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "noValue": "DOWN"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "name",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 77,
+      "title": "alloy",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 1, "w": 3, "h": 3 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "expr": "count_over_time({container=\"alloy\"}[5m])",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": { "0": { "text": "DOWN", "color": "red" } }
+            }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "noValue": "DOWN"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "name",
+        "colorMode": "background"
+      }
+    },
+
+    {
+      "id": 200,
+      "type": "row",
+      "title": "Overview",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 1 },
       "collapsed": false
     },
 
@@ -41,15 +309,15 @@
       "id": 1,
       "title": "Error Count — All Services (per 5m)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 1, "w": 16, "h": 8 },
+      "gridPos": { "x": 0, "y": 5, "w": 16, "h": 8 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "sum by (container) (count_over_time({job=\"docker\", container=~\"$container\"} | label_format level=level |~ \"(?i)error\" [5m]))",
+          "expr": "sum by (container) (count_over_time({job=\"docker\", container=~\"$container\"} |~ \"(?i)error\" [5m]))",
           "legendFormat": "{{container}} error"
         },
         {
-          "expr": "sum by (container) (count_over_time({job=\"docker\", container=~\"$container\"} | label_format level=level |~ \"(?i)warn\" [5m]))",
+          "expr": "sum by (container) (count_over_time({job=\"docker\", container=~\"$container\"} |~ \"(?i)warn\" [5m]))",
           "legendFormat": "{{container}} warn"
         }
       ],
@@ -61,7 +329,7 @@
       "id": 2,
       "title": "Total Errors (1h)",
       "type": "stat",
-      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
+      "gridPos": { "x": 16, "y": 5, "w": 4, "h": 4 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -85,7 +353,7 @@
       "id": 3,
       "title": "Total Warns (1h)",
       "type": "stat",
-      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+      "gridPos": { "x": 20, "y": 5, "w": 4, "h": 4 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -109,7 +377,7 @@
       "id": 4,
       "title": "Log Volume per Container (per 5m)",
       "type": "timeseries",
-      "gridPos": { "x": 16, "y": 5, "w": 8, "h": 4 },
+      "gridPos": { "x": 16, "y": 9, "w": 8, "h": 4 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -123,10 +391,10 @@
     },
 
     {
-      "id": 101,
+      "id": 300,
       "type": "row",
-      "title": "🤖 RAG App",
-      "gridPos": { "x": 0, "y": 9, "w": 24, "h": 1 },
+      "title": "RAG App",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 1 },
       "collapsed": false
     },
 
@@ -134,7 +402,7 @@
       "id": 10,
       "title": "RAG — Query Pipeline Steps",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 10, "w": 16, "h": 8 },
+      "gridPos": { "x": 0, "y": 14, "w": 16, "h": 8 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [{ "expr": "{container=\"rag_app\"} |= \"rag_engine\"" }],
       "options": {
@@ -148,7 +416,7 @@
       "id": 11,
       "title": "RAG — HTTP Request Count (per 5m)",
       "type": "timeseries",
-      "gridPos": { "x": 16, "y": 10, "w": 8, "h": 4 },
+      "gridPos": { "x": 16, "y": 14, "w": 8, "h": 4 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -170,7 +438,7 @@
       "id": 12,
       "title": "RAG — Memory Archive Events",
       "type": "logs",
-      "gridPos": { "x": 16, "y": 14, "w": 8, "h": 4 },
+      "gridPos": { "x": 16, "y": 18, "w": 8, "h": 4 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [{ "expr": "{container=\"rag_app\"} |= \"memory_service\"" }],
       "options": {
@@ -183,7 +451,7 @@
       "id": 13,
       "title": "RAG — Error / Exception Stream",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 18, "w": 24, "h": 6 },
+      "gridPos": { "x": 0, "y": 22, "w": 24, "h": 6 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -199,10 +467,10 @@
     },
 
     {
-      "id": 102,
+      "id": 400,
       "type": "row",
-      "title": "🗄️ Qdrant",
-      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 1 },
+      "title": "Qdrant",
+      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 1 },
       "collapsed": false
     },
 
@@ -210,19 +478,19 @@
       "id": 20,
       "title": "Qdrant — Request Rate by Method (per 5m)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 25, "w": 12, "h": 7 },
+      "gridPos": { "x": 0, "y": 29, "w": 12, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "sum(count_over_time({container=\"qdrant\"} |= \"POST\" [5m]))",
+          "expr": "sum(count_over_time({container=\"qdrant_db\"} |= \"POST\" [5m]))",
           "legendFormat": "POST (query/upsert)"
         },
         {
-          "expr": "sum(count_over_time({container=\"qdrant\"} |= \"GET\" [5m]))",
+          "expr": "sum(count_over_time({container=\"qdrant_db\"} |= \"GET\" [5m]))",
           "legendFormat": "GET"
         },
         {
-          "expr": "sum(count_over_time({container=\"qdrant\"} |= \"PUT\" [5m]))",
+          "expr": "sum(count_over_time({container=\"qdrant_db\"} |= \"PUT\" [5m]))",
           "legendFormat": "PUT (upsert)"
         }
       ],
@@ -234,7 +502,7 @@
       "id": 21,
       "title": "Qdrant — Collection Activity",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 25, "w": 12, "h": 7 },
+      "gridPos": { "x": 12, "y": 29, "w": 12, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -254,11 +522,11 @@
       "id": 22,
       "title": "Qdrant — Slow Requests (> 10ms)",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 32, "w": 24, "h": 5 },
+      "gridPos": { "x": 0, "y": 36, "w": 24, "h": 5 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "{container=\"qdrant_db\"} | regex \"(?P<duration>[\\\\d\\\\.]+)$\" | duration > 0.01"
+          "expr": "{container=\"qdrant_db\"} | regexp \"(?P<duration>[\\\\d\\\\.]+)$\" | duration > 0.01"
         }
       ],
       "options": {
@@ -269,10 +537,10 @@
     },
 
     {
-      "id": 103,
+      "id": 500,
       "type": "row",
-      "title": "🔴 Redis",
-      "gridPos": { "x": 0, "y": 37, "w": 24, "h": 1 },
+      "title": "Redis",
+      "gridPos": { "x": 0, "y": 41, "w": 24, "h": 1 },
       "collapsed": false
     },
 
@@ -280,12 +548,10 @@
       "id": 30,
       "title": "Redis — Warning / Error Stream",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 38, "w": 16, "h": 7 },
+      "gridPos": { "x": 0, "y": 42, "w": 16, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
-        {
-          "expr": "{container=\"redis_cache\"} |~ \"WARNING|ERROR|WARN\" | label_format level=level"
-        }
+        { "expr": "{container=\"redis_cache\"} |~ \"WARNING|ERROR|WARN\"" }
       ],
       "options": {
         "showLabels": true,
@@ -298,7 +564,7 @@
       "id": 31,
       "title": "Redis — BGSAVE / Persistence Events",
       "type": "logs",
-      "gridPos": { "x": 16, "y": 38, "w": 8, "h": 7 },
+      "gridPos": { "x": 16, "y": 42, "w": 8, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -313,33 +579,10 @@
     },
 
     {
-      "id": 104,
+      "id": 600,
       "type": "row",
-      "title": "🤖 Telegram Bot",
-      "gridPos": { "x": 0, "y": 45, "w": 24, "h": 1 },
-      "collapsed": false
-    },
-
-    {
-      "id": 40,
-      "title": "Telegram Bot — All Logs",
-      "type": "logs",
-      "gridPos": { "x": 0, "y": 46, "w": 24, "h": 6 },
-      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-      "targets": [{ "expr": "{container=\"dhtaics-telegram-bot\"}" }],
-      "options": {
-        "showLabels": true,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": true
-      }
-    },
-
-    {
-      "id": 105,
-      "type": "row",
-      "title": "📞 SIP Server",
-      "gridPos": { "x": 0, "y": 52, "w": 24, "h": 1 },
+      "title": "SIP Server",
+      "gridPos": { "x": 0, "y": 49, "w": 24, "h": 1 },
       "collapsed": false
     },
 
@@ -347,23 +590,23 @@
       "id": 60,
       "title": "SIP — Call Volume (per 5m)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 53, "w": 8, "h": 7 },
+      "gridPos": { "x": 0, "y": 50, "w": 8, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"Call started\" [5m]))",
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"Call started\" [5m]))",
           "legendFormat": "Calls Started"
         },
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"Call ended\" [5m]))",
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"Call ended\" [5m]))",
           "legendFormat": "Calls Ended"
         },
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"> INVITE\" [5m]))",
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"> INVITE\" [5m]))",
           "legendFormat": "INVITE"
         },
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"> BYE\" [5m]))",
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"> BYE\" [5m]))",
           "legendFormat": "BYE"
         }
       ],
@@ -375,19 +618,19 @@
       "id": 61,
       "title": "LLM — Request Rate & Errors (per 5m)",
       "type": "timeseries",
-      "gridPos": { "x": 8, "y": 53, "w": 8, "h": 7 },
+      "gridPos": { "x": 8, "y": 50, "w": 8, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"HTTP/1.1 200\" [5m]))",
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"HTTP/1.1 200\" [5m]))",
           "legendFormat": "200 OK"
         },
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"500 Internal Server Error\" [5m]))",
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"500 Internal Server Error\" [5m]))",
           "legendFormat": "500 Error"
         },
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"429 Too Many Requests\" [5m]))",
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"429 Too Many Requests\" [5m]))",
           "legendFormat": "429 Rate Limit"
         }
       ],
@@ -419,19 +662,19 @@
       "id": 62,
       "title": "STT — Language Distribution (per 1h)",
       "type": "timeseries",
-      "gridPos": { "x": 16, "y": 53, "w": 8, "h": 7 },
+      "gridPos": { "x": 16, "y": 50, "w": 8, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"language: zh\" [1h]))",
-          "legendFormat": "zh 中文"
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"language: zh\" [1h]))",
+          "legendFormat": "zh"
         },
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"language: en\" [1h]))",
-          "legendFormat": "en English"
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"language: en\" [1h]))",
+          "legendFormat": "en"
         },
         {
-          "expr": "sum(count_over_time({job=\"sip_server\"} |= \"Unsupported language\" [1h]))",
+          "expr": "sum(count_over_time({container=\"sip-server\"} |= \"Unsupported language\" [1h]))",
           "legendFormat": "Unsupported fallback"
         }
       ],
@@ -441,13 +684,13 @@
     },
     {
       "id": 63,
-      "title": "LLM — Avg Process Time (x-process-time header)",
+      "title": "LLM — Avg Process Time (per 5m)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 60, "w": 12, "h": 6 },
+      "gridPos": { "x": 0, "y": 57, "w": 12, "h": 6 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "avg_over_time({job=\"sip_server\"} | regexp \"x-process-time': '(?P<process_time>[\\\\d\\\\.]+)\" | unwrap process_time [5m])",
+          "expr": "avg_over_time({container=\"sip-server\"} | regexp \"x-process-time': '(?P<process_time>[\\\\d\\\\.]+)\" | unwrap process_time [5m])",
           "legendFormat": "avg LLM process time (s)"
         }
       ],
@@ -457,13 +700,13 @@
     },
     {
       "id": 64,
-      "title": "STT — Transcription Duration (per call)",
+      "title": "STT — Avg Transcription Duration (per 5m)",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 60, "w": 12, "h": 6 },
+      "gridPos": { "x": 12, "y": 57, "w": 12, "h": 6 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "avg_over_time({job=\"sip_server\"} | regexp \"Transcription complete in (?P<dur>[\\\\d\\\\.]+)s\" | unwrap dur [5m])",
+          "expr": "avg_over_time({container=\"sip-server\"} | regexp \"Transcription complete in (?P<dur>[\\\\d\\\\.]+)s\" | unwrap dur [5m])",
           "legendFormat": "avg STT duration (s)"
         }
       ],
@@ -475,11 +718,11 @@
       "id": 65,
       "title": "SIP — LLM Error Stream (500 / 429)",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 66, "w": 24, "h": 7 },
+      "gridPos": { "x": 0, "y": 63, "w": 24, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "{job=\"sip_server\"} |~ \"Chat failed|500 Internal|429 Too Many|Traceback|HTTPStatusError\""
+          "expr": "{container=\"sip-server\"} |~ \"Chat failed|500 Internal|429 Too Many|Traceback|HTTPStatusError\""
         }
       ],
       "options": {
@@ -493,11 +736,11 @@
       "id": 66,
       "title": "SIP — Call Lifecycle Stream",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 73, "w": 12, "h": 7 },
+      "gridPos": { "x": 0, "y": 70, "w": 12, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "{job=\"sip_server\"} |~ \"Call started|Call ended|> INVITE|> BYE|> ACK|RING_ANS|> Sent 200 OK|terminated\""
+          "expr": "{container=\"sip-server\"} |~ \"Call started|Call ended|> INVITE|> BYE|> ACK|RING_ANS|> Sent 200 OK|terminated\""
         }
       ],
       "options": {
@@ -511,11 +754,11 @@
       "id": 67,
       "title": "SIP — STT / TTS Pipeline Stream",
       "type": "logs",
-      "gridPos": { "x": 12, "y": 73, "w": 12, "h": 7 },
+      "gridPos": { "x": 12, "y": 70, "w": 12, "h": 7 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "{job=\"sip_server\"} |~ \"Transcription complete|Detected language|Generating response|LLM Response|Synthesizing|TTS audio saved|Unsupported language\""
+          "expr": "{container=\"sip-server\"} |~ \"Transcription complete|Detected language|Generating response|LLM Response|Synthesizing|TTS audio saved|Unsupported language\""
         }
       ],
       "options": {
@@ -527,22 +770,45 @@
     },
 
     {
-      "id": 106,
+      "id": 700,
       "type": "row",
-      "title": "🔍 Full Error Stream — All Services",
-      "gridPos": { "x": 0, "y": 80, "w": 24, "h": 1 },
+      "title": "Telegram Bot",
+      "gridPos": { "x": 0, "y": 77, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 40,
+      "title": "Telegram Bot — All Logs",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 78, "w": 24, "h": 6 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [{ "expr": "{container=\"dhtaics-telegram-bot\"}" }],
+      "options": {
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      }
+    },
+
+    {
+      "id": 800,
+      "type": "row",
+      "title": "Full Error Stream — All Services",
+      "gridPos": { "x": 0, "y": 84, "w": 24, "h": 1 },
       "collapsed": false
     },
 
     {
       "id": 50,
-      "title": "All Errors / Exceptions (即時)",
+      "title": "All Errors / Exceptions",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 81, "w": 24, "h": 10 },
+      "gridPos": { "x": 0, "y": 85, "w": 24, "h": 10 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "expr": "{job=~\"docker|sip_server\"} |~ \"(?i)error|exception|traceback|fatal|panic|critical|Chat failed|429\""
+          "expr": "{job=~\"docker|sip-server\"} |~ \"(?i)error|exception|traceback|fatal|panic|critical|Chat failed|429\""
         }
       ],
       "options": {

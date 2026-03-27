@@ -60,27 +60,17 @@ loki.source.file "app_logs" {
 }
 
 // ─────────────────────────────────────────────
-// SIP Server log (host 上直接跑，不是 container)
-// 改成你的實際 log 路徑
+// SIP Server log (container)
+// discovery.docker 已經收所有 container，
+// sip_logs process 靠 selector container="sip_server" 過濾
+// 確認你的 container 名稱，改掉下面所有 sip_server
 // ─────────────────────────────────────────────
-local.file_match "sip_logs" {
-  path_targets = [{
-    __path__ = "/opt/home/matthew/SIP_server/logs/*.log",
-    job      = "sip_server",
-    service  = "sip",
-  }]
-}
-
-loki.source.file "sip_logs" {
-  targets    = local.file_match.sip_logs.targets
-  forward_to = [loki.process.sip_logs.receiver]
-}
 
 loki.process "sip_logs" {
 
   // ── SIP 事件: > INVITE/ACK/BYE from (IP) (call_id=xxx) ──
   stage.match {
-    selector = "{job=\"sip_server\"}"
+    selector = "{container=\"sip_server\"}"
     stage.regex {
       expression = "^> (?P<sip_method>INVITE|ACK|BYE|CANCEL|OPTIONS|REGISTER) from \\('(?P<remote_ip>[\\d\\.]+)', (?P<remote_port>\\d+)\\)(?: \\(call_id=(?P<call_id>\\S+)\\))?$"
     }
@@ -430,6 +420,6 @@ loki.process "router" {
 // ─────────────────────────────────────────────
 loki.write "default" {
   endpoint {
-    url = "http://192.168.157.169:3100/loki/api/v1/push"
+    url = "http://1.169.157.169:3100/loki/api/v1/push"
   }
 }
