@@ -1,0 +1,245 @@
+// ─────────────────────────────────────────────
+// Docker container log 來源
+// ─────────────────────────────────────────────
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_image"]
+    target_label  = "image"
+  }
+  rule {
+    target_label = "job"
+    replacement  = "docker"
+  }
+}
+
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.containers.output
+  forward_to = [loki.process.router.receiver]
+}
+
+// ─────────────────────────────────────────────
+// 系統 log
+// ─────────────────────────────────────────────
+local.file_match "system_logs" {
+  path_targets = [{
+    __path__ = "/var/log/*.log",
+    job      = "system",
+  }]
+}
+
+loki.source.file "system_logs" {
+  targets    = local.file_match.system_logs.targets
+  forward_to = [loki.write.default.receiver]
+}
+
+// ─────────────────────────────────────────────
+// 應用程式 log
+// ─────────────────────────────────────────────
+local.file_match "app_logs" {
+  path_targets = [{
+    __path__ = "/app/logs/*.log",
+    job      = "app",
+  }]
+}
+
+loki.source.file "app_logs" {
+  targets    = local.file_match.app_logs.targets
+  forward_to = [loki.process.router.receiver]
+}
+
+// ─────────────────────────────────────────────
+// 解析路由 — 依 container label 分流
+// ─────────────────────────────────────────────
+loki.process "router" {
+
+  // ── Redis ──────────────────────────────────
+  // 格式: 1:M 24 Mar 2026 06:23:14.212 * <search> message
+  // 格式: 1:M 24 Mar 2026 06:23:14.212 # WARNING: message
+  stage.match {
+    selector = "{container=\"redis_cache\"}"
+
+    stage.regex {
+      expression = "^(?P<pid>\\d+):(?P<role>[A-Z]) (?P<timestamp>\\d+ \\w+ \\d+ \\d+:\\d+:\\d+\\.\\d+) (?P<level_char>[*#-]) (?:(?P<module><[^>]+>) )?(?P<message>.+)$"
+    }
+
+    // * = info, # = warning, - = verbose
+    stage.template {
+      source   = "level"
+      template = "{{ if eq .level_char \"#\" }}warn{{ else if eq .level_char \"*\" }}info{{ else }}debug{{ end }}"
+    }
+
+    stage.labels {
+      values = {
+        level  = "",
+        role   = "",
+        module = "",
+      }
+    }
+
+    stage.label_drop {
+      values = ["level_char"]
+    }
+  }
+
+  // ── RAG App ────────────────────────────────
+  // 格式: 2026-03-24 06:27:52,350 - app.services.rag_engine - INFO - message
+  // 格式: INFO:     172.20.0.1:34476 - "POST /api/v1/chat/ HTTP/1.1" 200 OK
+  stage.match {
+    selector = "{container=\"rag_app\"}"
+
+    stage.regex {
+      expression = "^(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d+) - (?P<logger>[\\w\\.]+) - (?P<level>\\w+) - (?P<message>.+)$"
+    }
+
+    stage.template {
+      source   = "level"
+      template = "{{ lower .level }}"
+    }
+
+    stage.labels {
+      values = {
+        level  = "",
+        logger = "",
+      }
+    }
+  }
+
+  // HTTP access log 行 (uvicorn style)
+  stage.match {
+    selector = "{container=\"rag_app\"}"
+
+    stage.regex {
+      expression = "^(?P<level>INFO|WARNING|ERROR):\\s+(?P<client_ip>[\\d\\.]+):(?P<client_port>\\d+) - \"(?P<method>\\w+) (?P<path>[^\"]+) HTTP/(?P<http_version>[\\d\\.]+)\" (?P<status_code>\\d+)"
+    }
+
+    stage.labels {
+      values = {
+        level       = "",
+        method      = "",
+        status_code = "",
+      }
+    }
+  }
+
+  // ── RAG Cache App ──────────────────────────
+  // 格式: INFO:     127.0.0.1:52142 - "GET /health HTTP/1.1" 200 OK
+  stage.match {
+    selector = "{container=\"rag-cache-server\"}"
+
+    stage.regex {
+      expression = "^(?P<level>INFO|WARNING|ERROR):\\s+(?P<client_ip>[\\d\\.]+):(?P<client_port>\\d+) - \"(?P<method>\\w+) (?P<path>[^\"]+) HTTP/(?P<http_version>[\\d\\.]+)\" (?P<status_code>\\d+)"
+    }
+
+    stage.labels {
+      values = {
+        level       = "",
+        method      = "",
+        status_code = "",
+      }
+    }
+
+    // 過濾掉 /health check，避免 noise
+    stage.drop {
+      expression = ".*GET /health.*"
+    }
+  }
+
+  // ── Qdrant ─────────────────────────────────
+  // 格式: 2026-03-24T06:23:32.385093Z  INFO actix_web::middleware::logger: IP "METHOD path HTTP/x.x" status bytes "-" "agent" duration
+  stage.match {
+    selector = "{container=\"qdrant_db\"}"
+
+    stage.regex {
+      expression = "^(?P<timestamp>\\S+)\\s+(?P<level>\\w+) (?P<logger>[\\w:]+): (?P<client_ip>[\\d\\.]+) \"(?P<method>\\w+) (?P<path>\\S+) HTTP/(?P<http_version>[\\d\\.]+)\" (?P<status_code>\\d+) (?P<bytes>\\d+) \"[^\"]*\" \"(?P<user_agent>[^\"]+)\" (?P<duration>[\\d\\.]+)"
+    }
+
+    stage.template {
+      source   = "level"
+      template = "{{ lower .level }}"
+    }
+
+    stage.labels {
+      values = {
+        level       = "",
+        method      = "",
+        status_code = "",
+        path        = "",
+      }
+    }
+
+    // 計算 duration_ms 方便後續 metric
+    stage.template {
+      source   = "duration_ms"
+      template = "{{ mulf .duration 1000 }}"
+    }
+
+    stage.labels {
+      values = {
+        duration_ms = "",
+      }
+    }
+  }
+
+  // ── Telegram Bot ───────────────────────────
+  stage.match {
+    selector = "{container=\"dhtaics-telegram-bot\"}"
+
+    stage.regex {
+      expression = "^(?P<level>INFO|WARNING|ERROR|DEBUG|CRITICAL)?:?\\s*(?P<message>.+)$"
+    }
+
+    stage.template {
+      source   = "level"
+      template = "{{ if .level }}{{ lower .level }}{{ else }}info{{ end }}"
+    }
+
+    stage.labels {
+      values = {
+        level = "",
+      }
+    }
+  }
+
+  // ── 通用 fallback：沒匹配到的 container ────
+  stage.match {
+    selector = "{job=\"docker\"}"
+
+    stage.regex {
+      expression = "(?i)(?P<level>info|warn|warning|error|fatal|debug|critical)"
+    }
+
+    stage.template {
+      source   = "level"
+      template = "{{ if .level }}{{ lower .level }}{{ else }}info{{ end }}"
+    }
+
+    stage.labels {
+      values = {
+        level = "",
+      }
+    }
+  }
+
+  forward_to = [loki.write.default.receiver]
+}
+
+// ─────────────────────────────────────────────
+// 輸出到 Loki
+// ─────────────────────────────────────────────
+loki.write "default" {
+  endpoint {
+    url = "http://1.169.157.169:3100/loki/api/v1/push"
+  }
+}
