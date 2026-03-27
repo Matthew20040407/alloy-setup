@@ -430,6 +430,6 @@ loki.process "router" {
 // ─────────────────────────────────────────────
 loki.write "default" {
   endpoint {
-    url = "http://1.169.157.169:3100/loki/api/v1/push"
+    url = "http://192.168.157.169:3100/loki/api/v1/push"
   }
 }
