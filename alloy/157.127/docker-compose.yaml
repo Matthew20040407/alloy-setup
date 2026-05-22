@@ -3,7 +3,7 @@ services:
     image: grafana/alloy:latest
     container_name: alloy
     ports:
-      - "12345:12345"
+      - 12345:12345
     volumes:
       - ./config.alloy:/etc/alloy/config.alloy:ro
       - /var/log:/var/log:ro
@@ -26,15 +26,19 @@ services:
   dcgm-exporter:
     image: nvcr.io/nvidia/k8s/dcgm-exporter:3.3.5-3.4.0-ubuntu22.04
     container_name: dcgm-exporter
-    runtime: nvidia
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
       - DCGM_EXPORTER_LISTEN=:9400
     cap_add:
       - SYS_ADMIN
-    # Mount Docker socket so dcgm-exporter can attach container metadata to GPU metrics
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility]
     restart: unless-stopped
     networks:
       - obs
