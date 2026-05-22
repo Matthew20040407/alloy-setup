@@ -1,0 +1,146 @@
+// ─────────────────────────────────────────────
+// Host: 192.168.157.127
+// Targets: node metrics + container metrics + per-container GPU + logs
+// Backend: Prometheus / Loki on 192.168.157.169
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// 1. Host metrics (node_exporter equivalent)
+// ─────────────────────────────────────────────
+prometheus.exporter.unix "node" {
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+  rootfs_path = "/host/root"
+
+  // Disable noisy/unused collectors; enable diskstats/filesystem explicitly
+  filesystem {
+    mount_points_exclude = "^/(dev|proc|sys|var/lib/docker/.+|host/.+)($|/)"
+    fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
+  }
+}
+
+prometheus.scrape "node" {
+  targets         = prometheus.exporter.unix.node.targets
+  forward_to      = [prometheus.remote_write.monitoring.receiver]
+  scrape_interval = "15s"
+  job_name        = "node"
+}
+
+// ─────────────────────────────────────────────
+// 2. Container metrics (cAdvisor)
+// ─────────────────────────────────────────────
+prometheus.exporter.cadvisor "local" {
+  docker_host               = "unix:///var/run/docker.sock"
+  docker_only               = true
+  disable_root_cgroup_stats = true
+  storage_duration          = "5m"
+}
+
+prometheus.scrape "cadvisor" {
+  targets         = prometheus.exporter.cadvisor.local.targets
+  forward_to      = [prometheus.relabel.cadvisor.receiver]
+  scrape_interval = "15s"
+  job_name        = "cadvisor"
+}
+
+prometheus.relabel "cadvisor" {
+  rule {
+    source_labels = ["__name__"]
+    regex         = "container_(cpu_usage_seconds_total|memory_usage_bytes|memory_working_set_bytes|network_receive_bytes_total|network_transmit_bytes_total|fs_usage_bytes|fs_limit_bytes|last_seen|accelerator_.+)"
+    action        = "keep"
+  }
+
+  // Drop host-level rows (empty container name)
+  rule {
+    source_labels = ["container"]
+    regex         = "^$"
+    action        = "drop"
+  }
+
+  forward_to = [prometheus.remote_write.monitoring.receiver]
+}
+
+// ─────────────────────────────────────────────
+// 3. GPU per-container (NVIDIA DCGM exporter)
+// DCGM exporter runs as a sidecar container; see docker-compose.yaml.
+// ─────────────────────────────────────────────
+prometheus.scrape "dcgm" {
+  targets = [{
+    __address__ = "dcgm-exporter:9400",
+    job         = "dcgm",
+  }]
+  forward_to      = [prometheus.remote_write.monitoring.receiver]
+  scrape_interval = "15s"
+}
+
+// ─────────────────────────────────────────────
+// 4. System logs (/var/log/*.log)
+// ─────────────────────────────────────────────
+local.file_match "system_logs" {
+  path_targets = [{
+    __path__ = "/var/log/*.log",
+    job      = "system",
+    host     = "157.127",
+  }]
+}
+
+loki.source.file "system_logs" {
+  targets    = local.file_match.system_logs.targets
+  forward_to = [loki.write.default.receiver]
+}
+
+// ─────────────────────────────────────────────
+// 5. Docker container logs
+// ─────────────────────────────────────────────
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_image"]
+    target_label  = "image"
+  }
+  rule {
+    target_label = "job"
+    replacement  = "docker"
+  }
+  rule {
+    target_label = "host"
+    replacement  = "157.127"
+  }
+}
+
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.containers.output
+  forward_to = [loki.write.default.receiver]
+}
+
+// ─────────────────────────────────────────────
+// 6. Remote endpoints (central backend on 157.169)
+// ─────────────────────────────────────────────
+prometheus.remote_write "monitoring" {
+  endpoint {
+    url = "http://192.168.157.169:9090/api/v1/write"
+  }
+  external_labels = {
+    host = "157.127",
+  }
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://192.168.157.169:3100/loki/api/v1/push"
+  }
+  external_labels = {
+    host = "157.127",
+  }
+}
