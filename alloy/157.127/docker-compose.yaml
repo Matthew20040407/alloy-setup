@@ -28,6 +28,8 @@ services:
     container_name: dcgm-exporter
     environment:
       - DCGM_EXPORTER_LISTEN=:9400
+    ports:
+      - 9400:9400
     cap_add:
       - SYS_ADMIN
     volumes:
