@@ -97,20 +97,25 @@ prometheus.relabel "dcgm" {
 }
 
 // ─────────────────────────────────────────────
-// 4. System logs (/var/log/*.log)
+// 4. System logs (/var/log/*.log) — disabled
+// /var/log holds historical dpkg/apt/syslog entries from before this host
+// was wired up. loki.source.file reads from byte 0 on first start, which
+// floods Loki with entries outside its per-stream chunk-age window.
+// Re-enable only after deciding how to handle backfill (raise Loki's
+// max_chunk_age, or tail only new lines via a pre-populated positions file).
 // ─────────────────────────────────────────────
-local.file_match "system_logs" {
-  path_targets = [{
-    __path__ = "/var/log/*.log",
-    job      = "system",
-    host     = "157.127",
-  }]
-}
-
-loki.source.file "system_logs" {
-  targets    = local.file_match.system_logs.targets
-  forward_to = [loki.write.default.receiver]
-}
+// local.file_match "system_logs" {
+//   path_targets = [{
+//     __path__ = "/var/log/*.log",
+//     job      = "system",
+//     host     = "157.127",
+//   }]
+// }
+//
+// loki.source.file "system_logs" {
+//   targets    = local.file_match.system_logs.targets
+//   forward_to = [loki.write.default.receiver]
+// }
 
 // ─────────────────────────────────────────────
 // 5. Docker container logs
