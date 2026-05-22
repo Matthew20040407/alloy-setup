@@ -82,6 +82,17 @@ prometheus.relabel "dcgm" {
     regex         = "DCGM_FI_DEV_XID_ERRORS"
     action        = "drop"
   }
+
+  // GPU pinning → container mapping. Update when containers move between GPUs.
+  //   GPU 0 → rag_app
+  //   GPU 1 → (unused)
+  rule {
+    source_labels = ["gpu"]
+    regex         = "0"
+    target_label  = "container"
+    replacement   = "rag_app"
+  }
+
   forward_to = [prometheus.remote_write.monitoring.receiver]
 }
 

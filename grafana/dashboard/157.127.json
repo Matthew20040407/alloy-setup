@@ -227,45 +227,45 @@
     },
     {
       "id": 24,
-      "title": "GPU per-Container Usage (DCGM)",
+      "title": "GPU per-Container Utilization",
       "type": "timeseries",
       "gridPos": { "x": 16, "y": 22, "w": 8, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
-      "description": "Per-container GPU utilization from DCGM exporter. Empty if container labels are not being attached — fall back to panel below.",
+      "description": "Per-container view via GPU pinning convention (relabel in Alloy config). Empty container = unused GPU.",
       "targets": [
         {
-          "expr": "sum by (container_name, gpu) (DCGM_FI_DEV_GPU_UTIL{host=\"$host\", container_name!=\"\"})",
-          "legendFormat": "{{container_name}} gpu{{gpu}}"
+          "expr": "DCGM_FI_DEV_GPU_UTIL{host=\"$host\"}",
+          "legendFormat": "gpu{{gpu}} {{container}}"
         }
       ]
     },
     {
       "id": 25,
-      "title": "GPU per-Container (cAdvisor accelerator)",
+      "title": "GPU per-Container VRAM",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 7 },
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
-      "description": "Alternative per-container GPU view from cAdvisor's NVML integration.",
+      "fieldConfig": { "defaults": { "unit": "decmbytes" } },
       "targets": [
         {
-          "expr": "container_accelerator_duty_cycle{host=\"$host\", container=~\"$container\"}",
-          "legendFormat": "{{container}} {{make}} {{model}}"
+          "expr": "DCGM_FI_DEV_FB_USED{host=\"$host\"}",
+          "legendFormat": "gpu{{gpu}} {{container}} used"
         }
       ]
     },
     {
       "id": 26,
-      "title": "GPU per-Container Memory (cAdvisor)",
+      "title": "GPU per-Container SM Activity",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 7 },
+      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
+      "description": "SM (Streaming Multiprocessor) occupancy — finer-grained than GPU_UTIL.",
       "targets": [
         {
-          "expr": "container_accelerator_memory_used_bytes{host=\"$host\", container=~\"$container\"}",
-          "legendFormat": "{{container}} {{model}}"
+          "expr": "DCGM_FI_PROF_SM_ACTIVE{host=\"$host\"} * 100",
+          "legendFormat": "gpu{{gpu}} {{container}}"
         }
       ]
     },
@@ -274,7 +274,7 @@
       "id": 3,
       "type": "row",
       "title": "Containers",
-      "gridPos": { "x": 0, "y": 35, "w": 24, "h": 1 },
+      "gridPos": { "x": 0, "y": 34, "w": 24, "h": 1 },
       "collapsed": false
     },
     {
