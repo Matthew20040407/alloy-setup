@@ -69,8 +69,20 @@ prometheus.scrape "dcgm" {
     __address__ = "dcgm-exporter:9400",
     job         = "dcgm",
   }]
-  forward_to      = [prometheus.remote_write.monitoring.receiver]
+  forward_to      = [prometheus.relabel.dcgm.receiver]
   scrape_interval = "15s"
+}
+
+prometheus.relabel "dcgm" {
+  // dcgm-exporter emits DCGM_FI_DEV_XID_ERRORS twice per GPU with identical
+  // labels, causing "different value but same timestamp" drops. Drop the
+  // metric entirely — check XID errors via `nvidia-smi -q -d ERROR` instead.
+  rule {
+    source_labels = ["__name__"]
+    regex         = "DCGM_FI_DEV_XID_ERRORS"
+    action        = "drop"
+  }
+  forward_to = [prometheus.remote_write.monitoring.receiver]
 }
 
 // ─────────────────────────────────────────────
