@@ -9,6 +9,9 @@ services:
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Required by cAdvisor exporter on cgroup v2 hosts
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /var/lib/docker:/var/lib/docker:ro
       # Host filesystem mounts for prometheus.exporter.unix
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
