@@ -1,0 +1,17 @@
+# Datasource provisioning: fixed UIDs so file-provisioned dashboards can
+# reference them directly (no ${DS_*} import placeholders).
+# Endpoints are the central observability host, hard-coded by repo convention.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://192.168.157.169:9090
+    isDefault: true
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://192.168.157.169:3100

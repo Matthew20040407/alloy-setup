@@ -446,6 +446,21 @@ prometheus.relabel "cadvisor" {
 }
 
 // ─────────────────────────────────────────────
+// RAG Cache Server app metrics (/metrics)
+// App runs with network_mode: host on :8000 → scrape via the host LAN IP
+// (Alloy is on the default bridge network; localhost would be the Alloy
+// container itself).
+// ─────────────────────────────────────────────
+prometheus.scrape "rag_cache_server" {
+  targets = [{
+    __address__ = "192.168.157.130:8000",
+    job         = "rag_cache_server",
+  }]
+  forward_to      = [prometheus.remote_write.monitoring.receiver]
+  scrape_interval = "15s"
+}
+
+// ─────────────────────────────────────────────
 // Export to server
 // ─────────────────────────────────────────────
 prometheus.remote_write "monitoring" {

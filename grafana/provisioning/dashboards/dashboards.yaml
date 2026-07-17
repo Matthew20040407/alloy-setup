@@ -1,0 +1,13 @@
+# Auto-load every dashboard JSON in grafana/dashboard/ (mounted at
+# /etc/grafana/dashboards by both composes). allowUiUpdates keeps them
+# editable in the UI — the team iterates on dashboards by hand.
+apiVersion: 1
+
+providers:
+  - name: cs-dashboards
+    type: file
+    folder: ""
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

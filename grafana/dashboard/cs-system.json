@@ -1,0 +1,208 @@
+{
+  "uid": "cs-system",
+  "title": "CS System",
+  "tags": ["cs", "rag_cache_server", "157.130"],
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "label": "Job",
+        "type": "constant",
+        "query": "rag_cache_server",
+        "current": {
+          "text": "rag_cache_server",
+          "value": "rag_cache_server"
+        },
+        "hide": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }
+    },
+    {
+      "id": 10,
+      "title": "Request Rate (RPS)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 1, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0 }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"$job\"}[5m]))",
+          "legendFormat": "all"
+        },
+        {
+          "expr": "sum by (handler) (rate(http_requests_total{job=\"$job\", handler=~\"/generate.*\"}[5m]))",
+          "legendFormat": "{{handler}}"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Error Rate (5xx)",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 1, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1 }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"$job\", status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"$job\"}[5m]))",
+          "legendFormat": "5xx ratio"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Response Latency (p50 / p95)",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 1, "w": 8, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "min": 0 }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"$job\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"$job\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Customer Service",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 1 }
+    },
+    {
+      "id": 20,
+      "title": "Cache Hit %",
+      "description": "cs_cache_hit_total vs cs_cache_miss_total over the dashboard range. Reads ~0% while the server runs with bypass_cache=True (every request goes to the LLM).",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 9, "w": 6, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1 }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(cs_cache_hit_total{job=\"$job\"}[$__range])) / clamp_min(sum(increase(cs_cache_hit_total{job=\"$job\"}[$__range])) + sum(increase(cs_cache_miss_total{job=\"$job\"}[$__range])), 1)",
+          "legendFormat": "hit ratio"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Active SIP Calls",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 9, "w": 6, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "text", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [
+        {
+          "expr": "cs_active_sip_calls{job=\"$job\"}",
+          "legendFormat": "active"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "Escalations to Human Agent (per hour)",
+      "description": "auto = LLM emitted the handoff phrase; manual = agent switched the session via /manager/manual.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 9, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "none", "min": 0 }
+      },
+      "targets": [
+        {
+          "expr": "sum by (type) (increase(cs_escalation_total{job=\"$job\"}[1h]))",
+          "legendFormat": "{{type}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Pipeline / GPU",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 15, "w": 24, "h": 1 }
+    },
+    {
+      "id": 30,
+      "title": "Pipeline Latency p95 (LLM / STT / TTS)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "min": 0 }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(cs_llm_latency_seconds_bucket{job=\"$job\"}[5m])))",
+          "legendFormat": "llm p95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(cs_stt_latency_seconds_bucket{job=\"$job\"}[5m])))",
+          "legendFormat": "stt p95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(cs_tts_latency_seconds_bucket{job=\"$job\"}[5m])))",
+          "legendFormat": "tts p95"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "title": "GPU Memory Used (torch)",
+      "description": "torch.cuda.memory_allocated() of the rag_cache_server process; 0 when CUDA is unavailable. For device-level GPU memory see the DCGM dashboards.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "min": 0 }
+      },
+      "targets": [
+        {
+          "expr": "cs_gpu_memory_used_bytes{job=\"$job\"}",
+          "legendFormat": "allocated"
+        }
+      ]
+    }
+  ]
+}
