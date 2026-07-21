@@ -157,7 +157,7 @@ loki.source.docker "containers" {
 // ─────────────────────────────────────────────
 prometheus.remote_write "monitoring" {
   endpoint {
-    url = "http://192.168.157.169:9090/api/v1/write"
+    url = coalesce(sys.env("PROMETHEUS_URL"), "http://192.168.157.169:9090/api/v1/write")
   }
   external_labels = {
     host = "157.127",
@@ -166,7 +166,7 @@ prometheus.remote_write "monitoring" {
 
 loki.write "default" {
   endpoint {
-    url = "http://192.168.157.169:3100/loki/api/v1/push"
+    url = coalesce(sys.env("LOKI_URL"), "http://192.168.157.169:3100/loki/api/v1/push")
   }
   external_labels = {
     host = "157.127",
