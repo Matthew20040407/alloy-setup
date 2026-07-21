@@ -46,6 +46,8 @@ To deploy Prometheus standalone: `docker compose -f prometheus/docker-compose.ya
 
 Admin login is `admin` / `Grafana-123` (set in the Compose env). The dashboard JSON for the 157.130 host lives at `grafana/dashboard/157.130.json` and is not auto-provisioned — import it manually in the UI, or wire up `grafana/provisioning/` (the path is mounted but currently empty).
 
+`grafana/provisioning/datasources/datasources.yaml` points at the Prometheus/Loki datasources by **container name** (`http://prometheus:9090`, `http://loki:3100`), relying on `full_obs_stack.yaml`'s shared `observability` network. This is deliberate: a container reaching its own host's external IP to hit a NAT'd port back to a sibling container is a hairpin-NAT path that many hosts silently drop (symptom: `dial tcp ...: i/o timeout` on Grafana's datasource proxy, not "connection refused"). This same file is also mounted by the legacy `grafana/docker-compose.yaml` (per-service, no shared network) — container-name resolution won't work there, but that path never deployed Prometheus anyway and only partially worked before. Prefer `deploy-full.sh` for a working backend.
+
 ## Linting
 
 `.trunk/trunk.yaml` configures `trunk` with yamllint, markdownlint, shellcheck, and others. Run `trunk check` if available; configs live in `.trunk/configs/`.

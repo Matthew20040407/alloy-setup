@@ -13,8 +13,6 @@ services:
       - --storage.tsdb.retention.time=30d
       - --web.enable-remote-write-receiver
     restart: unless-stopped
-    networks:
-      - observability
 
 volumes:
   prometheus-data:

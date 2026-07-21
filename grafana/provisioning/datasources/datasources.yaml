@@ -1,6 +1,10 @@
 # Datasource provisioning: fixed UIDs so file-provisioned dashboards can
 # reference them directly (no ${DS_*} import placeholders).
-# Endpoints are the central observability host, hard-coded by repo convention.
+# URLs use Docker service-name DNS (full_obs_stack.yaml's shared
+# `observability` network) rather than the host's own external IP — Grafana,
+# Prometheus, and Loki all run on the same box, and a container dialing its
+# own host's LAN IP back into a NAT'd port is a hairpin-NAT path that many
+# hosts simply drop (10s dial timeout, not "connection refused").
 apiVersion: 1
 
 datasources:
@@ -8,10 +12,10 @@ datasources:
     type: prometheus
     uid: prometheus
     access: proxy
-    url: http://192.168.157.169:9090
+    url: http://prometheus:9090
     isDefault: true
   - name: Loki
     type: loki
     uid: loki
     access: proxy
-    url: http://192.168.157.169:3100
+    url: http://loki:3100
